@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect } from 'react';
 
 import Header from './Header';
 import Main from './Main';
@@ -11,72 +11,11 @@ import Progress from './Progress';
 import FinishScreen from './FinishScreen';
 import Timer from './Timer';
 import Footer from './Footer';
-
-const initialState = {
-  questions: [],
-  status: 'loading',
-  index: 0,
-  answer: null,
-  points: 0,
-  highscore: 0,
-  sec_rem: null,
-};
-
-const SEC = 20;
-
-function reducer(state, action) {
-  switch (action.type) {
-    case 'dataReceived':
-      return { ...state, questions: action.payload, status: 'ready' };
-    case 'dataFailed':
-      return {
-        ...state,
-        status: 'error',
-      };
-    case 'start':
-      return {
-        ...state,
-        status: 'active',
-        sec_rem: state.questions.length * SEC,
-      };
-    case 'newAnswer':
-      const question = state.questions.at(state.index);
-      return {
-        ...state,
-        answer: action.payload,
-        points:
-          action.payload === question.correctOption
-            ? state.points + question.points
-            : state.points,
-      };
-    case 'nextQuestion':
-      return { ...state, index: state.index + 1, answer: null };
-    case 'finish':
-      return {
-        ...state,
-        status: 'finished',
-        highscore:
-          state.points > state.highscore ? state.points : state.highscore,
-      };
-    case 'again':
-      return {
-        ...initialState,
-        highscore: state.highscore,
-        questions: state.questions,
-        status: 'ready',
-      };
-    case 'tick':
-      return {
-        ...state,
-        sec_rem: state.sec_rem - 1,
-      };
-    default:
-      throw new Error('Invalid action was dispatched! ' + action.type);
-  }
-}
+import { useQuizContext } from './QuizContext';
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const { state, dispatch } = useQuizContext();
+  console.log(state);
 
   const numQuestions = state.questions.length;
   const maxPossiblePoints = state.questions.reduce(
@@ -103,35 +42,18 @@ export default function App() {
           <>
             <Progress
               numQuestions={numQuestions}
-              index={state.index}
-              points={state.points}
               maxPossiblePoints={maxPossiblePoints}
-              answer={state.answer}
             />
-            <Question
-              question={state.questions[state.index]}
-              dispatch={dispatch}
-              answer={state.answer}
-            />
+            <Question />
 
             <Footer>
-              <Timer dispatch={dispatch} sec_rem={state.sec_rem} />
-              <NextButton
-                dispatch={dispatch}
-                answer={state.answer}
-                numQuestions={numQuestions}
-                index={state.index}
-              />
+              <Timer />
+              <NextButton numQuestions={numQuestions} />
             </Footer>
           </>
         )}
         {state.status === 'finished' && (
-          <FinishScreen
-            points={state.points}
-            maxPossiblePoints={maxPossiblePoints}
-            highscore={state.highscore}
-            dispatch={dispatch}
-          />
+          <FinishScreen maxPossiblePoints={maxPossiblePoints} />
         )}
       </Main>
     </div>
